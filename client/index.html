@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+
+    <script type="module">
+        import { io } from 'https://cdn.socket.io/4.8.1/socket.io.esm.min.js';
+
+        const form = document.getElementById('form');
+        const input = document.getElementById('input');
+        const messages = document.getElementById('messages');
+        const otherChats = document.getElementById('otherChats');
+        const deleteChatBtn = document.getElementById('deleteChat');
+        const newUsernameBtn = document.getElementById('newUsername');
+
+        const getUsername = async () => {
+            const username = sessionStorage.getItem('username')
+            if (username) {
+                return username
+            }
+            const res = await fetch('https://randomuser.me/api/')
+            const data = await res.json()
+
+            const randomUsername = data.results[0].login.username
+
+            sessionStorage.setItem('username', randomUsername)
+            return randomUsername
+        }
+
+        const username = await getUsername()
+
+        const welcomeMsg = document.createElement('p');
+        welcomeMsg.innerHTML = `Welcome: <strong>${username}</strong>`;
+        otherChats.prepend(welcomeMsg);
+
+        const socket = io({
+            auth: {
+                username: username,
+                serverOffset: 0
+            }
+        });
+
+        socket.on('chat message', (msg, serverOffset, msgUser) => {
+            const isMine = msgUser === username
+
+            const item = `<li class="${isMine ? 'my-message' : 'other-message'}">
+                <small class="messageUsername">${msgUser}</small>
+                <p>${msg}</p>
+                </li>`;
+            messages.insertAdjacentHTML('beforeend', item);
+            socket.auth.serverOffset = serverOffset
+            messages.scrollTop = messages.scrollHeight
+        });
+
+        socket.on('delete chat', () => {
+            messages.innerHTML = '<p id="chatTitle">Nuevo Chat</p>';
+        })
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (input.value) {
+                socket.emit('chat message', input.value);
+                input.value = '';
+            }
+        });
+
+        deleteChatBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('Deleting chat...');
+            socket.emit('delete chat');
+        })
+
+        newUsernameBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            sessionStorage.removeItem('username')
+            location.reload()
+        })
+
+    </script>
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+        #layout {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 10px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        :root {
+            color-scheme: light dark;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            display: grid;
+            height: 100vh;
+            padding: 36px 36px 100px 36px;
+            flex-direction: column;
+            place-content: center;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+        }
+
+        #chat {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            overflow: hidden;
+            width: 500px;
+            height: 80vh;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        #otherChats {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 12px;
+            height: 80vh;
+            width: 50vh;
+            overflow-y: auto;
+            position: fixed;
+            left: 10px;
+        }
+
+        #messages {
+            list-style-type: none;
+            margin: 0;
+            padding: 8px;
+            height: calc(100% - 56px);
+            overflow-y: auto;
+        }
+
+        #messages>li {
+            padding: .5rem 1rem;
+            border-radius: 4px;
+            margin-bottom: 1px;
+        }
+
+        #messages>li:nth-child(odd) {
+            background: #f1f1f1;
+        }
+
+        #messages>li p {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
+        }
+
+        #messages>li.other-message {
+            text-align: left;
+            background: #f1f1f1;
+            margin-right: auto;
+            max-width: 70%;
+            border-radius: 8px;
+        }
+
+        #messages>li.my-message {
+            text-align: right;
+            background: #d1ecff;
+            margin-left: auto;
+            max-width: 70%;
+            border-radius: 8px;
+        }
+
+        #messages>li .messageUsername {
+            font-size: 0.75em;
+            color: #555;
+        }
+
+        .my-message .messageUsername{
+            display: none;
+        }
+
+        #form {
+            display: flex;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            background: #f9f9f9;
+            height: 48px;
+            left: 0;
+            padding: 4px;
+            position: absolute;
+            right: 0;
+        }
+
+        #input {
+            flex: 1;
+            border: 1px solid #ccc;
+            border-radius: 9999px;
+            margin: 4px;
+            padding: 0 8px;
+            font-size: 16px;
+        }
+
+        #input:focus {
+            outline: 0;
+            border-color: #777;
+        }
+
+        #form>button {
+            background: #09f;
+            color: #fff;
+            border: 0;
+            margin: 4px;
+            border-radius: 4px;
+        }
+
+        #form>button:hover {
+            background: #0cf;
+        }
+
+        #pageTitle {
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        #chatTitle {
+            text-align: center;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <h1 id="pageTitle">Online Chat</h1>
+
+    <div id="layout">
+        <section id="otherChats">
+            <hr>
+            <button id="deleteChat">Delete chat</button>
+            <button id="newUsername">New username</button>
+        </section>
+
+        <section id="chat">
+            <ul id="messages"><p id="chatTitle">Nuevo Chat</p></ul>
+            <form id="form">
+                <input type="text" name="message" id="input" placeholder="Type a new message" autocomplete="off" />
+                <button type="submit">Send</button>
+            </form>
+        </section>
+    </div>
+</body>

@@ -1,0 +1,25 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    display: grid;
+    height: 100vh;
+    padding: 36px;
+    flex-direction: column;
+    place-content: center;
+    grid-template-rows: 1fr;
+}
+
+#chat {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    overflow: hidden;
+    width: 350px;
+    height: 100%;
+    position: relative;
+}
