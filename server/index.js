@@ -8,7 +8,7 @@ import { createServer } from 'node:http'
 
 dotenv.config()
 
-const port  = process.env.PORT ?? 3000
+const port  = process.env.PORT
 
 const app = express()
 const server = createServer(app)
@@ -19,11 +19,11 @@ const io = new Server(server, {
 let db
 try {
     db = await mysql.createConnection({
-        host: 'localhost',
-        user: 'chat',
-        password: 'chat',
-        database: 'chat-database',
-        port: 3307
+        host: process.env.DB_HOST,
+        user: process.env.DB_USER,
+        password: process.env.DB_PASS,
+        database: process.env.DB_NAME,
+        port: process.env.DB_PORT
     })
     console.log('✓ Database connected')
 } catch (e) {
