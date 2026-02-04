@@ -16,6 +16,8 @@ const io = new Server(server, {
     connectionStateRecovery: {}
 })
 
+app.use(express.static(process.cwd() + '/client'));
+
 let db
 try {
     db = await mysql.createConnection({
